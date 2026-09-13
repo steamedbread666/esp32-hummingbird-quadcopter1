@@ -1,0 +1,487 @@
+/* ESP32 Drone Control — Design tokens & layout
+   Palette: near-black control console / cyan accent
+   Adjustable: colors, density via CSS variables below */
+
+:root {
+  --bg: #0b0f14;
+  --bg-panel: #121a22;
+  --bg-elev: #1a2430;
+  --ink: #e8eef4;
+  --ink-muted: #7a8794;
+  --accent: #00e5ff;
+  --accent-dim: rgba(0, 229, 255, 0.15);
+  --danger: #ff3b30;
+  --ok: #30d158;
+  --warn: #ffd60a;
+  --radius: 12px;
+  --stick-size: min(42vw, 200px);
+  --font-ui: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", Consolas, monospace;
+  --gap: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+#app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* —— Top bar —— */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bg-elev);
+  background: var(--bg-panel);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3a4552;
+  box-shadow: none;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.led[data-state="connecting"] {
+  background: var(--warn);
+  box-shadow: 0 0 8px var(--warn);
+  animation: pulse 1s infinite;
+}
+
+.led[data-state="on"] {
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+}
+
+.led[data-state="error"] {
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.top-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* —— Buttons —— */
+.btn {
+  appearance: none;
+  border: 1px solid var(--bg-elev);
+  background: var(--bg-elev);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn.ghost {
+  background: transparent;
+}
+
+.btn.mode-btn {
+  flex: 1;
+  min-height: 36px;
+  padding: 8px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.btn.mode-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.btn.land {
+  width: 100%;
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.btn.estop {
+  width: 100%;
+  background: rgba(255, 59, 48, 0.12);
+  border-color: var(--danger);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* —— Telemetry —— */
+.telemetry {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--bg-elev);
+}
+
+.t-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.t-label {
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.04em;
+}
+
+.t-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* —— Warning —— */
+.warn-banner {
+  margin: 8px 12px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 59, 48, 0.12);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.warn-banner.hidden {
+  display: none;
+}
+
+/* —— Stage / sticks —— */
+.stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--gap);
+  align-items: end;
+  padding: 16px 12px 12px;
+  min-height: 0;
+}
+
+.stick-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stick-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.stick-vals {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.stick {
+  position: relative;
+  width: var(--stick-size);
+  height: var(--stick-size);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #1c2834 0%, #0e141a 70%);
+  border: 1px solid #2a3542;
+  touch-action: none;
+}
+
+.stick-ring {
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  border: 1px dashed rgba(122, 135, 148, 0.35);
+  pointer-events: none;
+}
+
+.stick-cross {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stick-cross::before,
+.stick-cross::after {
+  content: "";
+  position: absolute;
+  background: rgba(122, 135, 148, 0.25);
+}
+
+.stick-cross::before {
+  left: 50%;
+  top: 15%;
+  bottom: 15%;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.stick-cross::after {
+  top: 50%;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.stick-knob {
+  position: absolute;
+  width: 42%;
+  height: 42%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: linear-gradient(160deg, #2d3d4d, #1a2430);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+  pointer-events: none;
+  will-change: left, top;
+}
+
+/* Left stick self-centering on Y only is optional — default both free after release */
+
+/* —— Center panel —— */
+.center-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(42vw, 160px);
+  align-items: stretch;
+}
+
+.arm-btn {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--ink-muted);
+  background: var(--bg-panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  padding: 0;
+}
+
+.arm-btn[data-armed="true"] {
+  border-color: var(--danger);
+  color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
+
+.arm-ring {
+  position: absolute;
+  inset: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.arm-ring-bg {
+  fill: none;
+  stroke: #2a3542;
+  stroke-width: 3;
+}
+
+.arm-ring-fg {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 188.4;
+  stroke-dashoffset: 188.4;
+  transition: stroke-dashoffset 0.05s linear;
+}
+
+.arm-btn[data-armed="true"] .arm-ring-fg {
+  stroke: var(--danger);
+}
+
+.arm-btn span {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.mode-row {
+  display: flex;
+  gap: 6px;
+}
+
+.send-rate {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.send-rate input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.send-rate span {
+  font-family: var(--font-mono);
+  color: var(--ink);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.toggle input {
+  accent-color: var(--accent);
+}
+
+/* —— Footer —— */
+.footer {
+  padding: 8px 12px 16px;
+  border-top: 1px solid var(--bg-elev);
+  background: var(--bg-panel);
+}
+
+.log-panel summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.log-panel pre {
+  margin: 8px 0 0;
+  max-height: 120px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.footer-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--ink-muted);
+  opacity: 0.8;
+}
+
+/* —— Narrow phones —— */
+@media (max-width: 420px) {
+  .telemetry {
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 8px;
+  }
+
+  .stage {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .center-panel {
+    grid-column: 1 / -1;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .arm-btn {
+    width: 88px;
+    aspect-ratio: 1;
+  }
+
+  .mode-row,
+  .send-rate,
+  .toggle,
+  .btn.land,
+  .btn.estop {
+    width: auto;
+  }
+
+  .btn.land,
+  .btn.estop {
+    flex: 1 1 40%;
+  }
+}
